@@ -2,7 +2,18 @@
 
 The commands below target a Linux workstation or an HPC cluster. Module names
 such as GCC and CUDA differ between clusters; ask the local administrator when
-a listed module is unavailable.
+a listed module is unavailable. Run the commands from the repository root.
+
+This workflow normally uses two Python environments:
+
+1. the `lpab` environment for this repository, Ladderpath, and ipSAE;
+2. the AlphaFold 3 environment, which has its own tightly coupled scientific
+   dependencies.
+
+The two environments can be combined only if the resulting dependency set is
+known to work. The pipeline invokes AlphaFold 3 directly as
+`[alphafold_python, alphafold_script, ...]`, so a Docker-only AlphaFold 3
+installation is not directly usable without adding a wrapper command.
 
 ## 1. Ladderpath (`lppack`)
 
@@ -11,7 +22,7 @@ pins the official revision tested with this workflow:
 
 ```bash
 python -m pip install -r lpab_tools/requirements.txt
-python -c "import lppack; print('lppack is ready')"
+python -c "import lppack, numpy; print('LPAB dependencies are ready')"
 ```
 
 See the [official lppack repository](https://github.com/yuernestliu/lppack) for
@@ -82,34 +93,27 @@ mmseqs createtsv sequence_db sequence_db clusters cluster_map.tsv
 
 ## 5. AlphaFold 3
 
-Start with the current [official AlphaFold 3 installation guide](https://github.com/google-deepmind/alphafold3/blob/main/docs/installation.md).
-The official guide currently targets Linux, a large sequence database, and a
-supported NVIDIA GPU. Model parameters require a separate application.
+Start with the [official AlphaFold 3 installation guide](https://github.com/google-deepmind/alphafold3/blob/main/docs/installation.md).
+The current official requirements include Linux, an NVIDIA GPU with a
+supported compute capability, substantial disk space for the databases, and
+model parameters obtained under AlphaFold 3's terms of use. The guide's
+commands and supported versions can change, so do not treat an old lab module
+recipe as a universal installation recipe.
 
-The following condensed native-conda recipe records the original laboratory
-setup. Package versions can become incompatible, so compare it with the
-official guide before reproducing it:
+After validating the AlphaFold 3 installation, set these four values in the
+top-level `parameters.txt`:
 
-```bash
-conda create -n AF3_3.11 python=3.11 -y
-conda activate AF3_3.11
-module load gcc/12.1.0-gcc-9.4.0-jtv
-module load cuda/12.0.1-gcc-12.1.0-kof
-module load cmake/3.23.1-gcc-9.4.0-wx2
-
-git clone https://github.com/google-deepmind/alphafold3.git ~/git_develop/af3
-cd ~/git_develop/af3
-mamba install -c bioconda hmmer -y
-pip install -r dev-requirements.txt
-pip install --upgrade "jax[cuda12]" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-pip install . --no-deps --verbose
-build_data
-python run_alphafold_test.py --model_dir=./alphafold3_models
+```text
+alphafold_python = /path/to/alphafold3/.venv/bin/python
+alphafold_script = /path/to/alphafold3/run_alphafold.py
+alphafold_model_dir = /path/to/alphafold3_models
+alphafold_database_dir = /path/to/alphafold3_databases
 ```
 
-Download the official databases listed in the AlphaFold 3 guide and place the
-approved model parameters in a private model directory. Do not commit model
-parameters or databases to this repository.
+The first path must point to the Python interpreter that can import the
+installed AlphaFold 3 package. The last two paths must contain the approved
+model parameters and the downloaded databases. Do not commit model parameters
+or databases to this repository.
 
 Verify the GPU:
 
@@ -117,5 +121,7 @@ Verify the GPU:
 python -c "import jax; print(jax.devices())"
 ```
 
-Finally, put `run_alphafold.py`, the model directory, and the database directory
-paths into the top-level `parameters.txt`.
+Run that check in the AlphaFold 3 environment. Run `python run_lpab.py
+--check` in the LPAB environment; it verifies the configured files and
+executables, but an AlphaFold 3 import test still requires the selected AF3
+interpreter and should be run separately when troubleshooting.

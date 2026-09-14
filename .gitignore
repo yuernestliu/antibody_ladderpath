@@ -1,4 +1,27 @@
+# macOS metadata and resource forks
+.DS_Store
+**/.DS_Store
+.AppleDouble
+._*
+
+# Python caches, environments, and test artifacts
 __pycache__/
 *.py[cod]
-results/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
 
+# Editor swap files
+*.swp
+*.swo
+
+# Workflow outputs and local logs
+results/
+*.log
+*.out
+*.err

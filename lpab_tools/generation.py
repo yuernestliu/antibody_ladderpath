@@ -11,7 +11,7 @@ AMINO_ACIDS = set("ACDEFGHIKLMNPQRSTVWYXBZJUO")
 
 
 def clean_sequence(value):
-    sequence = value.upper().replace(" ", "").replace("-", "").replace("0", "")
+    sequence = "".join(value.upper().split()).replace("-", "")
     unexpected = set(sequence) - AMINO_ACIDS
     if not sequence or unexpected:
         raise ValueError(f"Invalid amino-acid sequence: {sorted(unexpected)}")
@@ -83,9 +83,13 @@ def align_sequences(names, sequences, executable, work_dir, label):
 
 
 def pad_sequences(sequences):
-    """Provide a simple fallback for already aligned or equal-length sequences."""
-    length = max(map(len, sequences))
-    return [sequence.ljust(length, "-") for sequence in sequences]
+    """Validate sequences are already aligned when Clustal Omega is disabled."""
+    lengths = {len(sequence) for sequence in sequences}
+    if len(lengths) != 1:
+        raise ValueError(
+            "Clustal Omega is disabled, so all seed sequences must have equal length."
+        )
+    return list(sequences)
 
 
 def find_positions(sequence, fragment):

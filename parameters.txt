@@ -27,7 +27,9 @@ mmseqs_cov_mode = 2
 # Diversity-preserving grouped Monte Carlo sampling
 sample_count = 10
 
-# AlphaFold 3 installation (replace these three paths)
+# AlphaFold 3 installation. If AF3 uses a separate environment, set this to
+# that environment's Python interpreter rather than the LPAB environment's
+# python3 (for example: /path/to/alphafold3/.venv/bin/python).
 alphafold_python = python3
 alphafold_script = /path/to/alphafold3/run_alphafold.py
 alphafold_model_dir = /path/to/alphafold3_models
@@ -35,7 +37,7 @@ alphafold_database_dir = /path/to/alphafold3_databases
 alphafold_recycles = 10
 alphafold_diffusion_samples = 5
 
-# Official ipSAE script settings
+# Official ipSAE script settings. The selected interpreter must have NumPy.
 ipsae_python = python3
 ipsae_pae_cutoff = 10
 ipsae_distance_cutoff = 15

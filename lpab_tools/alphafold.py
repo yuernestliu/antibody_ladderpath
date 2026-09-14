@@ -19,12 +19,27 @@ def read_csv(path):
 
 
 def read_fasta(path):
-    sequence = "".join(
-        line.strip() for line in Path(path).read_text(encoding="utf-8").splitlines()
-        if line.strip() and not line.startswith(">")
-    )
-    if not sequence:
-        raise ValueError("The antigen FASTA contains no sequence.")
+    records = []
+    current = None
+    for raw_line in Path(path).read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith(">"):
+            if current is not None:
+                records.append("".join(current))
+            current = []
+        elif current is None:
+            raise ValueError("The antigen FASTA must start with a header line.")
+        else:
+            current.append(line)
+    if current is not None:
+        records.append("".join(current))
+    if len(records) != 1 or not records[0]:
+        raise ValueError("The antigen FASTA must contain exactly one non-empty sequence.")
+    sequence = records[0].upper()
+    if not sequence.isalpha():
+        raise ValueError("The antigen FASTA sequence must contain letters only.")
     return sequence
 
 
@@ -119,8 +134,9 @@ def parse_ipsae_max(path):
         except ValueError:
             continue
     expected = [frozenset(("H", "A")), frozenset(("L", "A"))]
-    values = [pair_scores[pair] for pair in expected if pair in pair_scores]
-    return min(values) if values else None
+    if not all(pair in pair_scores for pair in expected):
+        return None
+    return min(pair_scores[pair] for pair in expected)
 
 
 def run_ipsae(script, confidence_json, model_cif, python, pae_cutoff, distance_cutoff):
@@ -144,12 +160,16 @@ def round_value(value):
 
 def collect_results(jobs_dir, output_dir, final_csv, ipsae_script, ipsae_python, pae_cutoff, distance_cutoff):
     rows = []
-    for job_path in sorted(jobs_dir.glob("*.json")):
+    incomplete = []
+    job_paths = sorted(jobs_dir.glob("*.json"))
+    if not job_paths:
+        raise FileNotFoundError(f"No AlphaFold 3 job JSON files found in {jobs_dir}")
+    for job_path in job_paths:
         job = json.loads(job_path.read_text(encoding="utf-8"))
         name = job["name"]
         summary_path, full_path, model_path = find_result_files(output_dir, name)
         if not all((summary_path, full_path, model_path)):
-            print(f"Warning: incomplete AlphaFold 3 result for {name}")
+            incomplete.append(name)
             continue
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         full = json.loads(full_path.read_text(encoding="utf-8"))
@@ -165,6 +185,8 @@ def collect_results(jobs_dir, output_dir, final_csv, ipsae_script, ipsae_python,
         ipsae_min = run_ipsae(
             ipsae_script, full_path, model_path, ipsae_python, pae_cutoff, distance_cutoff
         )
+        if ipsae_min is None:
+            raise RuntimeError(f"ipSAE did not produce both H-A and L-A scores for {name}")
         sequences = {
             item["protein"]["id"]: item["protein"]["sequence"]
             for item in job["sequences"] if "protein" in item
@@ -180,6 +202,12 @@ def collect_results(jobs_dir, output_dir, final_csv, ipsae_script, ipsae_python,
             "pae": round_value(pae),
             "ipae": round_value(ipae),
         })
+    if incomplete:
+        names = ", ".join(incomplete)
+        raise RuntimeError(
+            "Refusing to write a partial final CSV; incomplete AlphaFold 3 results: "
+            f"{names}"
+        )
     rows.sort(key=lambda row: float(row["iptm"] or -1), reverse=True)
     with open(final_csv, "w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=OUTPUT_COLUMNS)

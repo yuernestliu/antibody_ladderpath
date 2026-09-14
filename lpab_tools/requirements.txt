@@ -1,1 +1,5 @@
+# Required by the bundled ipSAE implementation.
+numpy>=1.24,<3
+
+# Pin the Ladderpath revision used by this workflow.
 lppack @ git+https://github.com/yuernestliu/lppack.git@d522eb9b498eb88dcb937d61cd0f0a976d3564ca

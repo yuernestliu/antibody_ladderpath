@@ -53,6 +53,8 @@ def check_installation(root, values):
         ("Rosetta", "rosetta_executable"),
         ("BLASTP", "blastp_executable"),
         ("MMseqs2", "mmseqs_executable"),
+        ("AlphaFold Python", "alphafold_python"),
+        ("ipSAE Python", "ipsae_python"),
     ]
     if as_bool(values.get("use_clustalo", "true")):
         executable_checks.insert(0, ("Clustal Omega", "clustalo_executable"))
@@ -60,13 +62,19 @@ def check_installation(root, values):
         executable = values.get(key, "")
         checks.append((label, bool(shutil.which(executable)), executable or "not configured"))
 
-    for label, key in (
-        ("AlphaFold script", "alphafold_script"),
-        ("AlphaFold models", "alphafold_model_dir"),
-        ("AlphaFold databases", "alphafold_database_dir"),
+    for label, key, kind in (
+        ("Seed CSV", "seed_csv", "file"),
+        ("Antigen FASTA", "antigen_fasta", "file"),
+        ("AlphaFold script", "alphafold_script", "file"),
+        ("AlphaFold models", "alphafold_model_dir", "directory"),
+        ("AlphaFold databases", "alphafold_database_dir", "directory"),
     ):
         path = project_path(root, values.get(key, "missing"))
-        checks.append((label, path.exists(), str(path)))
+        passed = path.is_file() if kind == "file" else path.is_dir()
+        checks.append((label, passed, str(path)))
+
+    ipsae_script = root / "lpab_tools" / "ipsae.py"
+    checks.append(("Bundled ipSAE script", ipsae_script.is_file(), str(ipsae_script)))
 
     for label, passed, detail in checks:
         print(f"[{'OK' if passed else 'MISSING'}] {label}: {detail}")
