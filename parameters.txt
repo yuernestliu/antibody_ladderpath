@@ -1,0 +1,41 @@
+# Input and output
+seed_csv = example_seeds.csv
+antigen_fasta = example_antigen.fasta
+output_dir = results
+
+# Reproducible random generation
+random_seed = 1
+candidate_count = 20
+max_fragment_length = 60
+
+# Multiple sequence alignment used before Ladderpath generation
+use_clustalo = true
+clustalo_executable = clustalo
+
+# Rosetta antibody sequence check
+rosetta_executable = antibody.default.linuxgccrelease
+blastp_executable = blastp
+rosetta_timeout_seconds = 20
+rosetta_workers = 4
+
+# MMseqs2 clustering: concatenate heavy + light with no spacer
+mmseqs_executable = mmseqs
+mmseqs_min_identity = 0.9
+mmseqs_coverage = 0.8
+mmseqs_cov_mode = 2
+
+# Diversity-preserving grouped Monte Carlo sampling
+sample_count = 10
+
+# AlphaFold 3 installation (replace these three paths)
+alphafold_python = python3
+alphafold_script = /path/to/alphafold3/run_alphafold.py
+alphafold_model_dir = /path/to/alphafold3_models
+alphafold_database_dir = /path/to/alphafold3_databases
+alphafold_recycles = 10
+alphafold_diffusion_samples = 5
+
+# Official ipSAE script settings
+ipsae_python = python3
+ipsae_pae_cutoff = 10
+ipsae_distance_cutoff = 15
