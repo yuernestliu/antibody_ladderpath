@@ -1,6 +1,9 @@
 # LPAB Workflow
 
-This repository follows the workflow in the figure below:
+This repository contains the LPAB workflow and accompanying study data in
+[`data/`](data/).
+
+The workflow is summarized in the figure below:
 
 1. Clustal Omega alignment and Ladderpath sequence generation
 2. Rosetta antibody chain, framework, and six-CDR checks
@@ -19,6 +22,16 @@ This repository follows the workflow in the figure below:
 - `example_antigen.fasta`: example antigen sequence.
 
 All implementation details are kept in `lpab_tools/`.
+
+## Study data
+
+The [`data/`](data/) directory contains study files accompanying the manuscript,
+including CSV tables, sequence alignments, text files, a PyMOL session (`.pse`),
+and a ZIP archive. Filenames beginning with `Fig` indicate the corresponding
+manuscript figure and panel.
+
+The supplied study files are stored in `data/`; outputs from new workflow runs
+are written to `results/`, as described below.
 
 ## Requirements
 
